@@ -1,81 +1,42 @@
 #include <iostream>
-#include "sqlite3.h"
 #include "utils.h"
+#include <sstream>
 
 using namespace std;
 
-vector<ActionType> Actions;
+// Define the login detail variables
 int pin;
 string name;
 string usrName;
 bool devMode = true; // You can provide an initial value if needed
 
+// Define and initialize the MainActions vector
+vector<ActionType> MainActions = {
+        {0, "Quit Process"},
+        {1, "Log Out"},
+        {2, "Find book by ISBN Code"},
+        {3, "View Your Taken Out Books"}
+};
+
 bool isInt(const std::string& s) {
-    size_t i = 0;
-
-    // Skip leading whitespaces
-    while (i < s.length() && isspace(s[i]))
-        i++;
-
-    // Check for optional sign
-    if (i < s.length() && (s[i] == '+' || s[i] == '-'))
-        i++;
-
-    // Check for digits
-    bool hasDigits = false;
-    while (i < s.length() && isdigit(s[i])) {
-        hasDigits = true;
-        i++;
+    for (char c : s) {
+        if (!isdigit(c)) {
+            return false;
+        }
     }
-
-    // Check if there are no non-digit characters after skipping whitespaces and optional sign
-    return i == s.length() && hasDigits;
+    return true;
 }
 
 bool isFourDigitInteger(const std::string& str) {
-    // Check if the length of the string is exactly 4
     if (str.length() != 4) {
         return false;
     }
-
-    try {
-        // Attempt to convert the string to an integer
-        int number = std::stoi(str);
-
-        // Check if the integer falls within the range of 1000 to 9999
-        return (number >= 1000 && number <= 9999);
-    } catch (const std::invalid_argument&) {
-        // Conversion failed due to invalid argument (not an integer)
-        return false;
-    } catch (const std::out_of_range&) {
-        // Conversion failed due to out of range (integer too large)
-        return false;
+    for (char c : str) {
+        if (!isdigit(c)) {
+            return false;
+        }
     }
-}
-
-vector<int> reorderVector(const vector<int>& originalVector, int valueToSort) {
-    vector<pair<int, int>> indexedValues;
-    for (size_t i = 0; i < originalVector.size(); ++i) {
-        indexedValues.push_back(make_pair(originalVector[i], i));
-    }
-
-    sort(indexedValues.begin(), indexedValues.end(),
-         [&valueToSort](const pair<int, int>& a, const pair<int, int>& b) {
-             if (a.first == valueToSort) return false;
-             if (b.first == valueToSort) return true;
-             return a.first < b.first;
-         });
-
-    vector<int> reorderedVector;
-    for (const auto& pair : indexedValues) {
-        reorderedVector.push_back(pair.first);
-    }
-
-    return reorderedVector;
-}
-
-bool compareActionType(const ActionType& a, const ActionType& b) {
-    return a.number < b.number;
+    return true;
 }
 
 void SetupDevMode() {
@@ -85,7 +46,12 @@ void SetupDevMode() {
     }
 }
 
-void SortActions() {
-    sort(Actions.begin(), Actions.end(), compareActionType);
+std::vector<std::string> splitString(const std::string& str, char delimiter) {
+    std::vector<std::string> tokens;
+    std::istringstream iss(str);
+    std::string token;
+    while (std::getline(iss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
-

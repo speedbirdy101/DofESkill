@@ -16,9 +16,9 @@ bool checkPswdExists(const string& usrname, string pin_ent);
 
 static int addAccountCallback(void* pswdExists, int argc, char** argv, char** azColName);
 
-void addAccount(const string username, const int password, const string name_);
+void addAccount(const string& username, int password, const string& name_);
 
-void takeOutBook(const string isbn10, const string isbn13);
+void takeOutBook(string isbn10, string isbn13, string name);
 
 static int takeOutBookCallback(void* pswdExists, int argc, char** argv, char** azColName);
 
@@ -26,10 +26,16 @@ static int checkIfBookOutCallback(void* bookOut, int argc, char** argv, char** a
 
 bool checkIfBookOut(string bookISBN);
 
-void returnBook(const string isbn10, const string isbn13);
+void returnBook(const string& isbn10, const string& isbn13);
 
 bool checkUsrHasBook(string bookISBN);
 
 static int checkUsrHasBookCallback(void* holderUsrName, int argc, char** argv, char** azColName);
+
+static int returnBookCallback(void* pswdExists, int argc, char** argv, char** azColName);
+
+vector<json> getUsrTakingsOut();
+
+static int usrTakingsOutCallback(void* takingsOut, int argc, char** argv, char** azColName);
 
 #endif //DOFEPROJECT_DATABASE_H

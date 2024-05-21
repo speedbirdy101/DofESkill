@@ -1,22 +1,11 @@
-//
-// Created by Robin Bhugun on 29/03/2024.
-//
-
-#ifndef DOFEPROJECT_UTILS_H
-#define DOFEPROJECT_UTILS_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <iostream>
-#include <unordered_map>
-#include <variant>
-#include <string>
 #include <vector>
+#include <string>
+
 using namespace std;
-
-bool isFourDigitInteger(const std::string& str);
-
-void evaluateAction(int number, sqlite3* db);
-
-bool isInt(const string& s);
 
 // Create a data type for the object of the action list
 struct ActionType {
@@ -24,22 +13,18 @@ struct ActionType {
     string description;
 };
 
-// Define size changeable array of actions
-extern vector<ActionType> Actions;
-
-bool compareActionType(const ActionType& a, const ActionType& b);
-
-// Define the login details
+// Declare the external variables for login details
 extern int pin;
 extern string name;
 extern string usrName;
-
-// Setup Dev mode
 extern bool devMode;
 
+// Declare the external variable for MainActions
+extern vector<ActionType> MainActions;
+
+bool isInt(const std::string& s);
+bool isFourDigitInteger(const std::string& str);
 void SetupDevMode();
+std::vector<std::string> splitString(const std::string& str, char delimiter);
 
-void SortActions();
-
-
-#endif //DOFEPROJECT_UTILS_H
+#endif // UTILS_H

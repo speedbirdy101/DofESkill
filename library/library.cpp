@@ -6,7 +6,6 @@
 #include <curl/curl.h>
 #include "nlohmann/json.hpp"
 #include "map"
-#include "../utils/utils.h"
 #include "../database/database.h"
 
 using namespace std;
@@ -108,51 +107,10 @@ map<std::string, json> getBookByISBN(const char* isbn_code) {
     return {};
 }
 
-// Callback function to process each row returned by the SQL query
-static int Actionscallback(void* NotUsed, int argc, char** argv, char** azColName) {
-    // Iterate through the rows returned by the SQL query
-    for (int i = 0; i < argc; i += 2) { // Assuming the table structure is (number, name)
-        ActionType action;
-        // Assuming the first column is number and the second column is name
-        action.number = atoi(argv[i]);
-        action.description = argv[i + 1];
-        // Push the action into the Actions vector
-        Actions.push_back(action);
-    }
 
-    return 0; // Return 0 to continue processing
-}
-
-void loadActions(sqlite3* db) {
-    if (usrName.empty() && pin == 0) {
-        // Create an instance of ActionType for login/signup
-        ActionType loginAction;
-        loginAction.number = 1;
-        loginAction.description = "Login";
-
-        ActionType signupAction;
-        signupAction.number = 2;
-        signupAction.description = "Sign-Up";
-
-        // Push the action into the Actions vector
-        Actions.clear();
-        Actions.push_back(loginAction);
-        Actions.push_back(signupAction);
-    } else {
-        Actions.clear();
-
-        int rc;
-        char* zErrMsg = nullptr;
-
-        const char* sql = "SELECT * FROM actions"; // Your SQL query here
-        rc = sqlite3_exec(db, sql, Actionscallback, nullptr, &zErrMsg);
-
-        if (rc != SQLITE_OK) {
-            cerr << "SQL error: " << zErrMsg << endl;
-            sqlite3_free(zErrMsg);
-        } else {
-
-        }
+void displayVector(const vector <ActionType>& vectorToDisplay) {
+    for (const auto& vec : vectorToDisplay) {
+        cout << "(" + to_string(vec.number) + ") " + vec.description + "\n";
     }
 }
 
@@ -160,11 +118,7 @@ int getAction(bool intro, bool logup, bool bookPage, bool home_quit) {
     int actionIntegar;
 
     if (intro && !logup && !bookPage && !home_quit) {
-        SortActions();
-        // Display the elements in the vector
-        for (const auto& action : Actions) {
-            cout << "(" << action.number << ") " << action.description << endl;
-        }
+        displayVector(MainActions);
     } else if (!intro && logup && !bookPage && !home_quit) {
         cout << "Select an Option:\n(1) Login\n(2) Sign-Up" << endl;
     } else if (!intro && !logup && bookPage && !home_quit) {
@@ -174,6 +128,7 @@ int getAction(bool intro, bool logup, bool bookPage, bool home_quit) {
     }
 
     // Check for integer input
+
     while (!(cin >> actionIntegar)) {
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -183,11 +138,7 @@ int getAction(bool intro, bool logup, bool bookPage, bool home_quit) {
         cout << "Invalid input. Please enter an integer." << endl;
 
         if (intro && !logup && !bookPage && !home_quit) {
-            SortActions();
-            // Display the elements in the vector
-            for (const auto& action : Actions) {
-                cout << "(" << action.number << ") " << action.description << endl;
-            }
+            displayVector(MainActions);
         } else if (!intro && logup && !bookPage && !home_quit) {
             cout << "Select an Option:\n(1) Login\n(2) Sign-Up" << endl;
         } else if (!intro && !logup && bookPage && !home_quit) {
@@ -305,11 +256,9 @@ void evalLogin() {
 void goHome() {
     system("clear");
     // Welcome message
-    system("clear");
 
     cout << "Welcome to the Library Management system " << usrName << "!" << endl;
     cout << "Enter an action:" << endl;
-    loadActions(database);
 
     // run the functions based on the action
     evaluateAction(getAction(), database);
@@ -320,6 +269,7 @@ void evaluateAction(int number, sqlite3* db) {
         system("clear");
         cout << "QUIT THE SYSTEM!";
         sqlite3_close(db);
+
     } else if (number == 1) {
         system("clear");
 
@@ -335,20 +285,25 @@ void evaluateAction(int number, sqlite3* db) {
         system("clear");
         cout << "Welcome to the Library Management system " << usrName << "!" << endl;
         cout << "Enter an action:" << endl;
-        loadActions(database);
 
         // run the functions based on the action
         evaluateAction(getAction(), database);
 
     } else if (number == 2) {
-
-    } else if (number == 3) {
         system("clear");
-        char* bookISBN;
+        char *bookISBN = nullptr; // Initialize to nullptr
+        bool continueToDisplay = false;
 
-        while (true) {
+        while (!continueToDisplay) {
             cout << "Enter the book ISBN-10 OR ISBN-13 (ONLY DIGITS, NO SYMBOLS OR LETTERS)" << endl;
-            cin >> bookISBN;
+            string input;
+            cin >> input;
+
+            // Allocate memory for bookISBN based on the length of input
+            bookISBN = new char[input.length() + 1]; // +1 for null terminator
+
+            // Copy input string into bookISBN
+            strcpy(bookISBN, input.c_str());
 
             if (!isInt(bookISBN)) {
                 system("clear");
@@ -356,13 +311,14 @@ void evaluateAction(int number, sqlite3* db) {
                 continue;
             }
 
-            if (string(bookISBN).length() != 10 && string(bookISBN).length() != 13) {
+            // Check the length of the input
+            if (input.length() != 10 && input.length() != 13) {
                 system("clear");
                 cout << "IT MUST BE 10 OR 13 DIGITS ONLY. Eg: 1234567890 OR 1234567890123" << endl;
                 continue;
             }
 
-            break;
+            continueToDisplay = true;
         }
 
         cout << "Loading.. Please Wait" << endl;
@@ -415,16 +371,60 @@ void evaluateAction(int number, sqlite3* db) {
                 cout << "Invalid input. Please enter an integer which is displayed below within the brackets." << endl;
             }
             int actionChosen_book_page = getAction(false, false, true);
+
             if (actionChosen_book_page == 1) {
                 break;
             } else if (actionChosen_book_page == 2) {
                 // Take out book
-                takeOutBook(bookData["isbn10"], bookData["isbn13"]);
+                takeOutBook(bookData["isbn10"], bookData["isbn13"], bookData["title"]);
                 break;
             } else if (actionChosen_book_page == 3) {
                 // Return book
                 returnBook(bookData["isbn10"], bookData["isbn13"]);
                 //break;
+            } else {
+                system("clear");
+                firstLoop = false;
+                continue;
+            }
+        }
+        goHome();
+
+    } else if (number == 3) {
+        system("clear");
+        cout << "Welcome to the Library Management system " << usrName << "!" << endl;
+
+        vector<json> takingsOut = getUsrTakingsOut();
+
+        cout << "All the Books you Took Out/Currently Have Out:" << endl;
+        for (auto & x : takingsOut) {
+            char deliminator = '\n';
+            vector<std::string> tokens = splitString(x["taken_on"], deliminator);
+
+            cout << "- " << x["name"] << " " << "This Book is " << (x["out"] == "0" ? "Not " : "") << "Out" << endl ;
+            cout << "   - Taken Out: " << tokens[0] << endl;
+            cout << "   - ISBN 10: " << x["isbn10"] << endl;
+            cout << "   - ISBN 13: " << x["isbn13"] << endl;
+
+        }
+
+        // Add a space in between data & options
+        cout << endl;
+
+        // Options
+        bool firstLoop = true;
+        while (true) {
+            if (!firstLoop) {
+                cout << "Invalid input. Please enter an integer which is displayed below within the brackets." << endl;
+            }
+            int actionChosen_book_page = getAction(false, false, false, true);
+
+            if (actionChosen_book_page == 1) {
+                break;
+            } else if (actionChosen_book_page == 2) {
+                system("clear");
+                cout << "QUITTING THE PROCESS";
+                return;
             } else {
                 system("clear");
                 firstLoop = false;
@@ -451,7 +451,6 @@ void startSystem() {
     system("clear");
     cout << "Welcome to the Library Management system " << usrName << "!" << endl;
     cout << "Enter an action:" << endl;
-    loadActions(database);
 
     // run the functions based on the action
     evaluateAction(getAction(), database);

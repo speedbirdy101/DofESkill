@@ -1,7 +1,6 @@
 #include "sqlite3.h"
 #include <cstdlib> // for system()
 #include "library/library.h"
-
 #include "utils/utils.h"
 #include "database/database.h"
 
@@ -9,7 +8,7 @@ using namespace std;
 
 int main() {
 
-    SetupDevMode();
+    // SetupDevMode();
 
     loadDB(database, "");
 
